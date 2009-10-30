@@ -17,6 +17,7 @@ BuildRequires:  augeas-devel >= 0.5.1
 BuildRequires:  pkgconfig
 Requires:       ruby(abi) = 1.8
 Requires:       augeas-libs >= 0.5.1
+Requires:       libffi
 Provides:       ruby(augeas) = %{version}
 
 %description

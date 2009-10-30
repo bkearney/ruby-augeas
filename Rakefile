@@ -8,6 +8,7 @@
 #
 # Bryan Kearney <bkearney@redhat.com>
 
+require 'rubygems'
 require 'rake/clean'
 require 'rake/rdoctask'
 require 'rake/testtask'
@@ -15,51 +16,24 @@ require 'rake/gempackagetask'
 
 PKG_NAME='ruby-augeas'
 GEM_NAME=PKG_NAME # we'd like 'augeas' but that makes RPM fail
-PKG_VERSION='0.3.0'
-EXT_CONF='ext/augeas/extconf.rb'
-MAKEFILE="ext/augeas/Makefile"
-AUGEAS_MODULE="ext/augeas/_augeas.so"
+PKG_VERSION='0.4.0'
 SPEC_FILE="ruby-augeas.spec"
-AUGEAS_SRC=AUGEAS_MODULE.gsub(/.so$/, ".c")
 
 #
 # Building the actual bits
 #
-CLEAN.include [ "**/*~",
-                "ext/**/*.o", AUGEAS_MODULE,
-                "ext/**/depend" ]
+CLEAN.include [ "**/*~", "build"]
 
-CLOBBER.include [ "config.save",
-                  "ext/**/mkmf.log",
-                  MAKEFILE ]
-
-file MAKEFILE => EXT_CONF do |t|
-    Dir::chdir(File::dirname(EXT_CONF)) do
-         unless sh "ruby #{File::basename(EXT_CONF)}"
-             $stderr.puts "Failed to run extconf"
-             break
-         end
-    end
-end
-file AUGEAS_MODULE => [ MAKEFILE, AUGEAS_SRC ] do |t|
-    Dir::chdir(File::dirname(EXT_CONF)) do
-         unless sh "make"
-             $stderr.puts "make failed"
-             break
-         end
-     end
-end
-desc "Build the native library"
-task :build => AUGEAS_MODULE
+CLOBBER.include [ "config.save"]
 
 #
 # Testing
 #
 Rake::TestTask.new(:test) do |t|
     t.test_files = FileList['tests/tc_*.rb']
-    t.libs = [ 'lib', 'ext/augeas' ]
+    t.ruby_opts = ["-rubygems"]
+    t.libs = [ 'lib' ]
 end
-task :test => :build
 
 
 #
@@ -68,7 +42,7 @@ task :test => :build
 Rake::RDocTask.new do |rd|
     rd.main = "README.rdoc"
     rd.rdoc_dir = "doc/site/api"
-    rd.rdoc_files.include("README.rdoc", "ext/**/*.[ch]","lib/**/*.rb")
+    rd.rdoc_files.include("README.rdoc","lib/**/*.rb")
 end
 
 #
@@ -76,8 +50,7 @@ end
 #
 PKG_FILES = FileList[
   "Rakefile", "COPYING","README.rdoc", "NEWS",
-  "ext/**/*.[ch]", "lib/**/*.rb", "ext/**/MANIFEST", "ext/**/extconf.rb",
-  "tests/**/*",
+  "lib/**/*.rb", "tests/**/*",
   "spec/**/*"
 ]
 
@@ -93,8 +66,8 @@ SPEC = Gem::Specification.new do |s|
     s.summary = "Ruby bindings for augeas"
     s.files = PKG_FILES
     s.autorequire = "augeas"
+    s.requirements = 'ffi>3.0.5'
     s.required_ruby_version = '>= 1.8.1'
-    s.extensions = "ext/augeas/extconf.rb"
     s.description = "Provides bindings for augeas."
 end
 
